@@ -38,3 +38,4 @@ class ForumThreadController extends Controller
         return view('forum.show', compact('thread'));
     }
 }
+
