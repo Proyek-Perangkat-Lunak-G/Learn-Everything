@@ -1,0 +1,83 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom Design Tokens - matching Elearning App */
+:root {
+    --color-primary: #3B82F6;
+    --color-primary-dark: #2563EB;
+    --color-secondary: #8B5CF6;
+    --color-accent: #EC4899;
+    --color-success: #10B981;
+    --color-warning: #F59E0B;
+    --color-danger: #EF4444;
+    --radius: 0.625rem;
+}
+
+/* Gradient text utility */
+.text-gradient {
+    background: linear-gradient(to right, #3B82F6, #8B5CF6, #EC4899);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Card hover effect */
+.card-hover {
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+.card-hover:hover {
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+/* Badge styles */
+.badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+}
+.badge-blue { @apply bg-blue-100 text-blue-800; }
+.badge-green { @apply bg-green-100 text-green-800; }
+.badge-purple { @apply bg-purple-100 text-purple-800; }
+.badge-yellow { @apply bg-yellow-100 text-yellow-800; }
+.badge-red { @apply bg-red-100 text-red-800; }
+.badge-gray { @apply bg-gray-100 text-gray-800; }
+
+/* Button styles matching Elearning App */
+.btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none;
+}
+.btn-primary {
+    @apply bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500 px-4 py-2;
+}
+.btn-secondary {
+    @apply bg-gray-100 text-gray-900 hover:bg-gray-200 focus:ring-gray-500 px-4 py-2;
+}
+.btn-outline {
+    @apply border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:ring-blue-500 px-4 py-2;
+}
+.btn-danger {
+    @apply bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 px-4 py-2;
+}
+.btn-sm { @apply px-3 py-1.5 text-xs; }
+.btn-lg { @apply px-6 py-3 text-base; }
+
+/* Progress bar */
+.progress-bar {
+    @apply w-full bg-gray-200 rounded-full overflow-hidden;
+}
+.progress-bar-fill {
+    @apply h-full bg-blue-600 rounded-full transition-all duration-300;
+}
+
+/* Stat card icon backgrounds */
+.stat-icon { @apply p-3 rounded-lg; }
+.stat-icon-blue { @apply bg-blue-100 text-blue-600; }
+.stat-icon-green { @apply bg-green-100 text-green-600; }
+.stat-icon-yellow { @apply bg-yellow-100 text-yellow-600; }
+.stat-icon-purple { @apply bg-purple-100 text-purple-600; }
+
+/* Smooth scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #f1f5f9; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
