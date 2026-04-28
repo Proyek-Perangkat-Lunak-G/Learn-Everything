@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Course;
 use Illuminate\Http\Request;
-
+//ini scrum 77 dan 79 prana
 class CourseController extends Controller
 {
     public function index(Request $request)
