@@ -8,7 +8,7 @@ use App\Models\Enrollment;
 use App\Models\Module;
 use App\Models\ModuleProgress;
 use Illuminate\Http\Request;
-//ini scrum 77 prana
+//ini scrum 77 dan scrum 79 prana
 
 class CourseApiController extends Controller
 {
