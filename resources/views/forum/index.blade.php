@@ -7,12 +7,10 @@
                     <h1 class="text-3xl font-bold text-gray-900 mb-2">Forum Diskusi</h1>
                     <p class="text-gray-600">Berbagi pengalaman dan bertukar ilmu dengan komunitas</p>
                 </div>
-                @auth
-                    <a href="{{ route('forum.create') }}" class="btn btn-primary">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                        Buat Topik Baru
-                    </a>
-                @endauth
+                <a href="{{ route('forum.create') }}" class="btn btn-primary">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    Buat Topik Baru
+                </a>
             </div>
 
             <div class="flex flex-col md:flex-row gap-4">
@@ -58,12 +56,10 @@
                     <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
                     <h3 class="text-xl font-semibold text-gray-900 mb-2">Tidak ada topik ditemukan</h3>
                     <p class="text-gray-600 mb-6">Coba kata kunci lain atau buat topik baru</p>
-                    @auth
-                        <a href="{{ route('forum.create') }}" class="btn btn-primary">
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                            Buat Topik Baru
-                        </a>
-                    @endauth
+                    <a href="{{ route('forum.create') }}" class="btn btn-primary">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                        Buat Topik Baru
+                    </a>
                 </div>
             @endforelse
         </div>
