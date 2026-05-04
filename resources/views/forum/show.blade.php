@@ -64,13 +64,54 @@
                 <h3 class="font-semibold text-gray-900 mb-3">Tulis Balasan</h3>
                 <form method="POST" action="{{ route('forum.replies.store', $thread) }}">
                     @csrf
-                    <textarea name="content" rows="4" required class="w-full border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="Tulis balasan Anda..."></textarea>
-                    @error('content') <p class="text-red-500 text-sm mt-1">{{ $message }}</p> @enderror
-                    <button type="submit" class="mt-3 btn btn-primary">Kirim Balasan</button>
+                    <textarea 
+                        name="content" 
+                        rows="4" 
+                        required 
+                        minlength="1"
+                        maxlength="500"
+                        class="w-full border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 @error('content') border-red-500 @enderror" 
+                        placeholder="Tulis balasan Anda (minimal 1 karakter, maksimal 500 karakter)..."
+                    >{{ old('content') }}</textarea>
+                    @error('content') 
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p> 
+                    @enderror
+                    <div class="flex items-center justify-between mt-3">
+                        <span class="text-xs text-gray-500" id="charCount">0 / 500 karakter</span>
+                        <button type="submit" class="btn btn-primary">Kirim Balasan</button>
+                    </div>
                 </form>
             </div>
         @else
             <p class="text-center text-gray-500"><a href="{{ route('login') }}" class="text-blue-600 hover:underline">Login</a> untuk membalas.</p>
         @endauth
     </div>
+
+    @push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const textarea = document.querySelector('textarea[name="content"]');
+            const charCount = document.getElementById('charCount');
+            
+            if (textarea && charCount) {
+                textarea.addEventListener('input', function() {
+                    const length = this.value.length;
+                    charCount.textContent = length + ' / 500 karakter';
+                    
+                    if (length > 500) {
+                        charCount.classList.add('text-red-500');
+                        charCount.classList.remove('text-gray-500');
+                    } else {
+                        charCount.classList.add('text-gray-500');
+                        charCount.classList.remove('text-red-500');
+                    }
+                });
+                
+                // Initialize counter on page load
+                const initialLength = textarea.value.length;
+                charCount.textContent = initialLength + ' / 500 karakter';
+            }
+        });
+    </script>
+    @endpush
 </x-app-layout>
