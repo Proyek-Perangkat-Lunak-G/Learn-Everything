@@ -14,8 +14,8 @@ class StoreForumThreadRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'title' => 'required|string|max:200',
-            'content' => 'required|string|max:2000',
+            'title' => 'required|string|max:100',
+            'content' => 'required|string|max:500',
         ];
     }
 }
