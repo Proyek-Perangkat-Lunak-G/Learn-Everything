@@ -117,6 +117,5 @@
         </div>
     </div>
 </x-app-layout>
-
-
-
+##sudah Di UAT, testing. 
+##Tambahan gambar di Sprint 2 nanti, PBI sekalian sama admin - Prana
