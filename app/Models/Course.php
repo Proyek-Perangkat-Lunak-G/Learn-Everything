@@ -50,3 +50,5 @@ class Course extends Model
         return $this->hasMany(Enrollment::class);
     }
 }
+
+##Sudah di testing, feedback masuk Sprint 2 - Prana
