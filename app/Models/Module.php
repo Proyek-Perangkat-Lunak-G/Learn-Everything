@@ -26,3 +26,4 @@ class Module extends Model
         return $this->hasMany(ModuleProgress::class);
     }
 }
+##front end untuk modul course
