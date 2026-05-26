@@ -109,20 +109,28 @@ class CourseController extends Controller
     public function storeModule(Request $request, Course $course)
     {
         $request->validate([
-            'title' => 'required|string|max:255',
-            'content' => 'required|string',
-            'video_url' => 'nullable|url',
+            'title'       => 'required|string|max:255',
+            'content'     => 'required|string',
+            'video_url'   => 'nullable|url',
+            'video_file'  => 'nullable|file|mimes:mp4,webm,mov,avi|max:204800', // 200 MB
         ]);
 
         $maxOrder = $course->modules()->max('order') ?? 0;
 
-        $module = Module::create([
+        $data = [
             'course_id' => $course->id,
-            'title' => $request->title,
-            'content' => $request->content,
+            'title'     => $request->title,
+            'content'   => $request->content,
             'video_url' => $request->video_url,
-            'order' => $maxOrder + 1,
-        ]);
+            'order'     => $maxOrder + 1,
+        ];
+
+        if ($request->hasFile('video_file')) {
+            $data['video_path'] = $request->file('video_file')->store('modules/videos', 'public');
+            $data['video_url']  = null; // file upload takes priority
+        }
+
+        $module = Module::create($data);
 
         // Auto-generate quiz
         $this->generateQuizForModule($module);
@@ -133,12 +141,30 @@ class CourseController extends Controller
     public function updateModule(Request $request, Module $module)
     {
         $request->validate([
-            'title' => 'required|string|max:255',
-            'content' => 'required|string',
-            'video_url' => 'nullable|url',
+            'title'      => 'required|string|max:255',
+            'content'    => 'required|string',
+            'video_url'  => 'nullable|url',
+            'video_file' => 'nullable|file|mimes:mp4,webm,mov,avi|max:204800',
         ]);
 
-        $module->update($request->only(['title', 'content', 'video_url']));
+        $data = $request->only(['title', 'content', 'video_url']);
+
+        if ($request->hasFile('video_file')) {
+            // Delete old file if exists
+            if ($module->video_path) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($module->video_path);
+            }
+            $data['video_path'] = $request->file('video_file')->store('modules/videos', 'public');
+            $data['video_url']  = null;
+        } elseif ($request->filled('video_url')) {
+            // If a new URL is set, clear any old local file
+            if ($module->video_path) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($module->video_path);
+                $data['video_path'] = null;
+            }
+        }
+
+        $module->update($data);
 
         return redirect()->route('admin.courses.modules', $module->course)->with('success', 'Modul berhasil diupdate!');
     }
