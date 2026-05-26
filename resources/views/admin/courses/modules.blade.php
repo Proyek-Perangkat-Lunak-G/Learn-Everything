@@ -17,7 +17,7 @@
     <!-- Add Module Form -->
     <div class="bg-white rounded-xl shadow p-6 mb-8">
         <h2 class="text-lg font-semibold mb-4">Tambah Modul Baru</h2>
-        <form action="{{ route('admin.courses.modules.store', $course) }}" method="POST" class="space-y-4">
+        <form action="{{ route('admin.courses.modules.store', $course) }}" method="POST" enctype="multipart/form-data" class="space-y-4">
             @csrf
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Judul Modul</label>
@@ -27,9 +27,24 @@
                 <label class="block text-sm font-medium text-gray-700 mb-1">Konten</label>
                 <textarea name="content" rows="6" class="w-full rounded-lg border-gray-300 focus:ring-blue-500" required></textarea>
             </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Video URL (opsional)</label>
-                <input type="url" name="video_url" class="w-full rounded-lg border-gray-300 focus:ring-blue-500">
+            <div x-data="{ videoType: 'url' }">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Video (opsional)</label>
+                <div class="flex gap-3 mb-3">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" x-model="videoType" value="url" class="text-blue-600"> <span class="text-sm">URL (YouTube/Vimeo)</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" x-model="videoType" value="file" class="text-blue-600"> <span class="text-sm">Upload File Video</span>
+                    </label>
+                </div>
+                <div x-show="videoType === 'url'">
+                    <input type="url" name="video_url" placeholder="https://youtube.com/watch?v=..." class="w-full rounded-lg border-gray-300 focus:ring-blue-500">
+                    <p class="text-xs text-gray-500 mt-1">Masukkan URL YouTube atau Vimeo. Otomatis dikonversi ke embed.</p>
+                </div>
+                <div x-show="videoType === 'file'" x-cloak>
+                    <input type="file" name="video_file" accept="video/mp4,video/webm,video/mov,video/avi" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                    <p class="text-xs text-gray-500 mt-1">Format: MP4, WebM, MOV, AVI. Maks 200MB.</p>
+                </div>
             </div>
             <button type="submit" class="btn btn-primary">Tambah Modul + Auto Quiz</button>
         </form>
@@ -64,11 +79,30 @@
                         </form>
                     </div>
                 </div>
-                <form x-show="editing" x-cloak action="{{ route('admin.modules.update', $module) }}" method="POST" class="space-y-4">
+                <form x-show="editing" x-cloak action="{{ route('admin.modules.update', $module) }}" method="POST" enctype="multipart/form-data" class="space-y-4">
                     @csrf @method('PUT')
                     <input type="text" name="title" value="{{ $module->title }}" class="w-full rounded-lg border-gray-300 focus:ring-blue-500" required>
                     <textarea name="content" rows="4" class="w-full rounded-lg border-gray-300 focus:ring-blue-500" required>{{ $module->content }}</textarea>
-                    <input type="url" name="video_url" value="{{ $module->video_url }}" class="w-full rounded-lg border-gray-300 focus:ring-blue-500" placeholder="Video URL">
+                    <div x-data="{ videoType: '{{ $module->video_path ? 'file' : 'url' }}' }">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Video</label>
+                        <div class="flex gap-3 mb-3">
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" x-model="videoType" value="url" class="text-blue-600"> <span class="text-sm">URL</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" x-model="videoType" value="file" class="text-blue-600"> <span class="text-sm">Upload File Baru</span>
+                            </label>
+                        </div>
+                        <div x-show="videoType === 'url'">
+                            <input type="url" name="video_url" value="{{ $module->video_url }}" class="w-full rounded-lg border-gray-300 focus:ring-blue-500" placeholder="https://youtube.com/watch?v=...">
+                        </div>
+                        <div x-show="videoType === 'file'" x-cloak>
+                            @if($module->video_path)
+                                <p class="text-xs text-green-600 mb-1">✅ File video sudah ada. Upload baru untuk mengganti.</p>
+                            @endif
+                            <input type="file" name="video_file" accept="video/mp4,video/webm,video/mov,video/avi" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                        </div>
+                    </div>
                     <div class="flex gap-2">
                         <button type="submit" class="btn btn-primary btn-sm">Simpan</button>
                         <button type="button" @click="editing = false" class="btn btn-outline btn-sm">Batal</button>
