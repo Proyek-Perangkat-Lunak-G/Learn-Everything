@@ -27,7 +27,7 @@
                 @if($product->seller_id === auth()->id())
                     <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
                         <p class="text-gray-600 font-medium">Ini adalah produk Anda</p>
-                        <a href="{{ route('marketplace.edit', $product) }}" class="btn btn-outline mt-3">Edit Produk</a>
+                        <a href="{{ route('marketplace.edit', $product) }}" class="mt-3 inline-flex items-center justify-center rounded-xl bg-blue-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition duration-200 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2">Edit Produk</a>
                     </div>
                 @elseif($product->stock > 0)
                     <form action="{{ route('cart.addProduct') }}" method="POST" class="mb-3">

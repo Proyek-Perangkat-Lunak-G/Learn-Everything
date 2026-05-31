@@ -83,7 +83,7 @@
                         </div>
                         @auth
                             @if($product->seller_id === auth()->id())
-                                <span onclick="event.preventDefault(); window.location='{{ route('marketplace.edit', $product) }}'" class="mt-2 block text-center text-sm text-gray-500 hover:text-blue-600 transition cursor-pointer">Edit Produk</span>
+                                <span onclick="event.preventDefault(); window.location='{{ route('marketplace.edit', $product) }}'" class="mt-2 block text-center text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-lg px-4 py-2 transition duration-200">Edit Produk</span>
                             @endif
                         @endauth
                     </div>
