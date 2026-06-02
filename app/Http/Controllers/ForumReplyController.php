@@ -6,15 +6,12 @@ use App\Models\ForumThread;
 use App\Models\ForumReply;
 use App\Models\ForumLike;
 use Illuminate\Http\Request;
+use App\Http\Requests\StoreForumReplyRequest;
 
 class ForumReplyController extends Controller
 {
-    public function store(Request $request, ForumThread $thread)
+    public function store(StoreForumReplyRequest $request, ForumThread $thread)
     {
-        $request->validate([
-            'content' => 'required|string|max:5000',
-        ]);
-
         $thread->replies()->create([
             'user_id' => $request->user()->id,
             'content' => $request->content,

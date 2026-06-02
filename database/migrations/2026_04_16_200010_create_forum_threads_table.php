@@ -11,8 +11,8 @@ return new class extends Migration
         Schema::create('forum_threads', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->string('title');
-            $table->text('content');
+            $table->string('title', 100);
+            $table->string('content', 500);
             $table->timestamps();
         });
     }
