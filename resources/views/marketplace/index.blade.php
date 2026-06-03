@@ -41,7 +41,7 @@
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             @forelse($products as $product)
-                <a href="{{ route('marketplace.show', $product) }}" class="bg-white rounded-lg shadow-sm overflow-hidden card-hover block">
+                <div data-href="{{ route('marketplace.show', $product) }}" class="bg-white rounded-lg shadow-sm overflow-hidden card-hover block cursor-pointer card-clickable">
                     @if($product->image)
                         <div class="relative h-48">
                             <img src="{{ Storage::url($product->image) }}" alt="{{ $product->name }}" class="w-full h-full object-cover">
@@ -58,7 +58,28 @@
                         </div>
                     @endif
                     <div class="p-4">
-                        <h3 class="font-semibold text-gray-900 mb-1 line-clamp-2">{{ $product->name }}</h3>
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-semibold text-gray-900 mb-1 line-clamp-2">{{ $product->name }}</h3>
+                            @auth
+                                @if($product->seller_id === auth()->id())
+                                    <div class="relative inline-block text-left">
+                                        <button type="button" class="menu-toggle inline-flex items-center p-2 rounded-full bg-white text-gray-600 hover:bg-gray-100 border border-gray-200 shadow-sm" data-menu-id="menu-{{ $product->id }}" aria-expanded="false">
+                                            <svg class="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><circle cx="6" cy="10" r="1.5"/><circle cx="10" cy="10" r="1.5"/><circle cx="14" cy="10" r="1.5"/></svg>
+                                        </button>
+                                        <div id="menu-{{ $product->id }}" class="menu-content origin-top-right absolute right-0 mt-2 w-40 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 hidden z-10">
+                                            <div class="py-1">
+                                                <a href="{{ route('marketplace.edit', $product) }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Edit Produk</a>
+                                                <form action="{{ route('marketplace.destroy', $product) }}" method="POST" onsubmit="return confirm('Hapus produk ini?');">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100">Hapus Produk</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endif
+                            @endauth
+                        </div>
                         <p class="text-sm text-gray-500 mb-3">Oleh: {{ $product->seller->name }}</p>
 
                         @if($product->stock !== null)
@@ -72,7 +93,7 @@
                                     <form method="POST" action="{{ route('cart.addProduct') }}">
                                         @csrf
                                         <input type="hidden" name="product_id" value="{{ $product->id }}">
-                                        <button type="submit" class="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                                        <button type="submit" onclick="event.stopPropagation();" class="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z"/></svg>
                                         </button>
                                     </form>
@@ -81,13 +102,8 @@
                                 @endif
                             @endauth
                         </div>
-                        @auth
-                            @if($product->seller_id === auth()->id())
-                                <span onclick="event.preventDefault(); window.location='{{ route('marketplace.edit', $product) }}'" class="mt-2 block text-center text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-lg px-4 py-2 transition duration-200">Edit Produk</span>
-                            @endif
-                        @endauth
                     </div>
-                </a>
+                </div>
             @empty
                 <div class="col-span-4 text-center py-12 bg-white rounded-lg shadow-sm">
                     <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
@@ -98,4 +114,47 @@
         </div>
         <div class="mt-8">{{ $products->links() }}</div>
     </div>
+
+    <script>
+        // Close all menus
+        function closeAllMenus(exceptId){
+            document.querySelectorAll('.menu-content').forEach(m=>{ if(m.id !== exceptId) m.classList.add('hidden'); });
+        }
+
+        // Toggle via direct listeners to stop event propagation to parent <a>
+        document.querySelectorAll('.menu-toggle').forEach(btn => {
+            btn.addEventListener('click', function(e){
+                e.preventDefault();
+                e.stopPropagation();
+                const id = btn.dataset.menuId;
+                const menu = document.getElementById(id);
+                if(!menu) return;
+                const isHidden = menu.classList.contains('hidden');
+                closeAllMenus(id);
+                if(isHidden) menu.classList.remove('hidden'); else menu.classList.add('hidden');
+            });
+        });
+
+        // Prevent clicks inside menu from bubbling to parent link
+        document.querySelectorAll('.menu-content').forEach(menu => {
+            menu.addEventListener('click', function(e){
+                e.stopPropagation();
+            });
+        });
+
+        // Handle card clicks: navigate to product detail unless click was on interactive element
+        document.addEventListener('click', function(e){
+            // If click is on interactive element, do nothing (these stopPropagation themselves)
+            const card = e.target.closest('.card-clickable');
+            if(card){
+                const interactive = e.target.closest('button, a, form, input, select, textarea, .menu-toggle, .menu-content');
+                if(!interactive){
+                    const href = card.dataset.href;
+                    if(href) window.location = href;
+                    return;
+                }
+            }
+            closeAllMenus();
+        });
+    </script>
 </x-app-layout>
