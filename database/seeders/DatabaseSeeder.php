@@ -23,24 +23,6 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // Kosongkan tabel-tabel utama agar seeding tidak error duplikasi
-        \DB::statement('SET FOREIGN_KEY_CHECKS=0;');
-        \App\Models\TutorPayment::truncate();
-        \App\Models\TutorAvailability::truncate();
-        \App\Models\Address::truncate();
-        \App\Models\Product::truncate();
-        \App\Models\ForumReply::truncate();
-        \App\Models\ForumThread::truncate();
-        \App\Models\Enrollment::truncate();
-        \App\Models\ModuleProgress::truncate();
-        \App\Models\QuizQuestion::truncate();
-        \App\Models\Quiz::truncate();
-        \App\Models\Module::truncate();
-        \App\Models\Course::truncate();
-        \App\Models\Tutor::truncate();
-        \App\Models\Admin::truncate();
-        \App\Models\User::truncate();
-        \DB::statement('SET FOREIGN_KEY_CHECKS=1;');
         // ── Admin ─────────────────────────────────────────
         $admin = User::create([
             'name'     => env('ADMIN_NAME', 'Administrator'),
@@ -207,20 +189,6 @@ class DatabaseSeeder extends Seeder
                         'updated_at'     => now(),
                     ],
                 ]);
-
-                // ── Tutor Availabilities (Jadwal Tutor) ────────────────
-                // (Jika memang ingin di sini, tapi biasanya lebih baik di luar loop module)
-                // foreach ($tutorUsers as $tu) {
-                //     for ($i = 0; $i < 2; $i++) {
-                //         \App\Models\TutorAvailability::create([
-                //             'tutor_id'   => $tu['tutor']->id,
-                //             'day'        => ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][rand(0,6)],
-                //             'start_time' => sprintf('%02d:00:00', rand(8, 15)), // jam 8-15
-                //             'end_time'   => sprintf('%02d:00:00', rand(16, 21)), // jam 16-21
-                //             'is_booked'  => false,
-                //         ]);
-                //     }
-                // }
             }
         }
 
@@ -299,26 +267,6 @@ class DatabaseSeeder extends Seeder
         }
 
         // ── Tutor Payments (admin pays tutors) ────────────
-                // ── Tutor Availabilities (Jadwal Tutor) ────────────────
-
-                // Generate jadwal 3 hari ke depan untuk setiap tutor (kecuali Siti Rahayu)
-                $today = now();
-                foreach ($tutorUsers as $tu) {
-                    if ($tu['user']->email === 'siti@learn.test') continue;
-                    for ($i = 0; $i < 3; $i++) {
-                        $date = $today->copy()->addDays($i);
-                        $start = rand(8, 15);
-                        $end = rand($start + 1, 21);
-                        \App\Models\TutorAvailability::create([
-                            'tutor_id'     => $tu['tutor']->id,
-                            'date'         => $date->toDateString(),
-                            'start_time'   => sprintf('%02d:00:00', $start),
-                            'end_time'     => sprintf('%02d:00:00', $end),
-                            'is_available' => true,
-                            'is_booked'    => false,
-                        ]);
-                    }
-                }
         foreach ($tutorUsers as $tu) {
             TutorPayment::create([
                 'tutor_id' => $tu['tutor']->id,
@@ -339,33 +287,5 @@ class DatabaseSeeder extends Seeder
         }
 
         $this->command->info('✅ Seeded: 1 admin, 3 tutors, 5 students, 4 courses with modules & quizzes, enrollments, 4 forum threads, 5 products, addresses, tutor payments');
-        // ======================
-        // Akun dan Password Seeder
-        // ======================
-        // Admin:
-        //   Email   : admin@learn.test
-        //   Password: admin123
-
-        // Tutor:
-        //   Email   : budi@learn.test
-        //   Email   : siti@learn.test
-        //   Email   : agus@learn.test
-        //   Password: password
-    //
-    // Booking Home Visit (sudah ada jadwal):
-    //   Semua akun user di atas dapat melakukan booking home visit jika fitur dan jadwal tersedia.
-    //   Data jadwal Home Visit dapat dicek di tabel home_visit_bookings dan tutor_availabilities.
-
-    //   Booking Home Visit - Siti Rahayu:
-    //     Tidak Ada Jadwal Tersedia
-    //     Tutor ini belum memiliki jadwal yang tersedia. Silakan hubungi tutor melalui chat untuk menanyakan ketersediaan.
-
-        // User (sudah enrollment):
-        //   Email   : dewi@learn.test
-        //   Email   : rizky@learn.test
-        //   Email   : ayu@learn.test
-        //   Email   : fajar@learn.test
-        //   Email   : putri@learn.test
-        //   Password: password
     }
 }
