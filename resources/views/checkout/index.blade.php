@@ -103,7 +103,6 @@
                     <select name="payment_method" required class="w-full border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
                         <option value="transfer">Transfer Bank</option>
                         <option value="ewallet">E-Wallet (GoPay, OVO, DANA)</option>
-                        <option value="cod">Bayar di Tempat (COD)</option>
                     </select>
                 </div>
 

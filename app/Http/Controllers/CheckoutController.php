@@ -43,7 +43,7 @@ class CheckoutController extends Controller
         });
 
         // Validate based on product types
-        $rules = ['payment_method' => 'required|in:transfer,ewallet,cod'];
+        $rules = ['payment_method' => 'required|in:transfer,ewallet'];
         
         if ($hasPhysicalProducts) {
             $rules['address_id'] = 'required|exists:addresses,id';
