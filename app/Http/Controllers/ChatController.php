@@ -2,11 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\SendChatRequest;
 use App\Models\Chat;
 use App\Models\Tutor;
 use App\Models\User;
-use App\Services\ChatService;
 use Illuminate\Http\Request;
 
 class ChatController extends Controller
@@ -110,51 +108,37 @@ class ChatController extends Controller
         return view('chat.index', compact('chatPartners', 'availableTutors', 'availableSellers', 'messages', 'receiver'));
     }
 
-    /**
-     * Mengirim pesan chat dengan validasi lengkap
-     * 
-     * Business Rules:
-     * 1. Message length: 1-500 karakter
-     * 2. Attachment: max 10MB
-     * 3. Kombinasi: (message 1-500 + optional attachment) OR (empty message + mandatory attachment)
-     * 
-     * @param SendChatRequest $request
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function send(SendChatRequest $request)
+    public function send(Request $request)
     {
-        // Request sudah divalidasi oleh SendChatRequest
-        $sender = $request->user();
-        $receiver = User::findOrFail($request->receiver_id);
-        
-        // Gunakan ChatService untuk process pesan
-        $chatService = new ChatService();
-        $result = $chatService->processChatMessage(
-            $sender,
-            $receiver,
-            $request->input('message', ''),
-            $request->file('attachment')
-        );
+        $request->validate([
+            'receiver_id' => 'required|exists:users,id',
+            'message'     => 'nullable|string|max:5000',
+            'attachment'  => 'nullable|file|max:10240', // 10MB max
+        ]);
 
-        // Jika gagal validasi, return error
-        if (!$result['success']) {
-            return response()->json([
-                'success' => false,
-                'message' => $result['message'],
-                'errors' => $result['errors'],
-            ], 422);
+        // Must have message or attachment
+        if (!$request->filled('message') && !$request->hasFile('attachment')) {
+            return response()->json(['error' => 'Pesan atau lampiran diperlukan.'], 422);
         }
 
-        // Jika berhasil, return pesan dengan attachment URL
-        $chat = $result['data'];
-        $attachmentUrl = $chat->attachment ? asset('storage/' . $chat->attachment) : null;
+        $attachmentPath = null;
+        $attachmentName = null;
+        if ($request->hasFile('attachment')) {
+            $file = $request->file('attachment');
+            $attachmentName = $file->getClientOriginalName();
+            $attachmentPath = $file->store('chat-attachments', 'public');
+        }
 
-        return response()->json([
-            'success' => true,
-            'message' => $result['message'],
-            'data' => array_merge($chat->toArray(), [
-                'attachment_url' => $attachmentUrl,
-            ]),
-        ], 201);
+        $chat = Chat::create([
+            'sender_id'       => $request->user()->id,
+            'receiver_id'     => $request->receiver_id,
+            'message'         => $request->message ?? '',
+            'attachment'      => $attachmentPath,
+            'attachment_name' => $attachmentName,
+        ]);
+
+        return response()->json(array_merge($chat->toArray(), [
+            'attachment_url'  => $attachmentPath ? asset('storage/' . $attachmentPath) : null,
+        ]), 201);
     }
 }
