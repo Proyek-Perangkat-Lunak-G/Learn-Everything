@@ -119,8 +119,9 @@ Route::middleware('auth')->group(function () {
 
     // Addresses
     Route::get('/addresses', [AddressController::class, 'index'])->name('addresses.index');
+    Route::get('/addresses/{address}/edit', [AddressController::class, 'edit'])->name('addresses.edit');
     Route::post('/addresses', [AddressController::class, 'store'])->name('addresses.store');
-    Route::put('/addresses/{address}', [AddressController::class, 'update'])->name('addresses.update');
+    Route::patch('/addresses/{address}', [AddressController::class, 'update'])->name('addresses.update');
     Route::delete('/addresses/{address}', [AddressController::class, 'destroy'])->name('addresses.destroy');
 
     // History & Certificates

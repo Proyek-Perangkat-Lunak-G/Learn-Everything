@@ -33,6 +33,13 @@
                     <form action="{{ route('cart.addProduct') }}" method="POST" class="mb-3">
                         @csrf
                         <input type="hidden" name="product_id" value="{{ $product->id }}">
+                        <div class="flex gap-3 mb-3">
+                            <div class="flex-1">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Jumlah</label>
+                                <input type="number" name="quantity" value="1" min="1" max="{{ $product->stock }}" required
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                        </div>
                         <button type="submit" class="btn btn-primary w-full">Tambah ke Keranjang</button>
                     </form>
                     <a href="{{ route('chat.show', $product->seller) }}" class="btn btn-outline w-full flex items-center justify-center gap-2">

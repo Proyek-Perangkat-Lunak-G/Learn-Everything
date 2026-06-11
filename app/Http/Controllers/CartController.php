@@ -49,7 +49,7 @@ class CartController extends Controller
             ]);
         }
 
-        return back()->with('success', 'Added to cart!');
+        return redirect()->route('cart.index')->with('success', 'Produk berhasil ditambahkan ke keranjang!');
     }
 
     public function addCourse(Request $request)
@@ -75,7 +75,7 @@ class CartController extends Controller
             ]);
         }
 
-        return back()->with('success', 'Course added to cart!');
+        return redirect()->route('cart.index')->with('success', 'Kursus berhasil ditambahkan ke keranjang!');
     }
 
     public function remove(CartItem $item)
@@ -86,7 +86,7 @@ class CartController extends Controller
 
         $item->delete();
 
-        return back()->with('success', 'Item removed from cart.');
+        return back()->with('success', 'Item berhasil dihapus dari keranjang.');
     }
 
     private function getOrCreateCart($user): Cart
