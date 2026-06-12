@@ -14,26 +14,26 @@ const io = new Server(server, {
     },
 });
 
-// Track online users: userId -> Set of socketIds
+// Menyimpan koneksi online users
 const onlineUsers = new Map();
 
 io.on('connection', (socket) => {
     console.log(`Socket connected: ${socket.id}`);
 
-    // User joins with their userId
+    // Registrasi User
     socket.on('register', (userId) => {
-        socket.userId = String(userId); // Pastikan string untuk konsistensi Map
+        socket.userId = String(userId);
         if (!onlineUsers.has(socket.userId)) {
             onlineUsers.set(socket.userId, new Set());
         }
         onlineUsers.get(socket.userId).add(socket.id);
         console.log(`User ${userId} registered (${onlineUsers.get(socket.userId).size} connections)`);
 
-        // Broadcast online status
+        // Broadcast status online
         io.emit('online-users', Array.from(onlineUsers.keys()));
     });
 
-    // Join a chat room
+    // Masuk ke room chat
     socket.on('join-chat-room', (data) => {
         const { userId, partnerId } = data;
         const roomName = [userId, partnerId].sort((a, b) => a - b).join('-');
@@ -41,7 +41,7 @@ io.on('connection', (socket) => {
         console.log(`User ${userId} joined room: ${roomName}`);
     });
 
-    // Leave a chat room
+    // Keluar dari room chat
     socket.on('leave-chat-room', (data) => {
         const { userId, partnerId } = data;
         const roomName = [userId, partnerId].sort((a, b) => a - b).join('-');
@@ -49,13 +49,12 @@ io.on('connection', (socket) => {
         console.log(`User ${userId} left room: ${roomName}`);
     });
 
-    // Handle chat message using rooms (Mendukung Teks 500 Karakter & Dokumen Realtime)
+    // Handle pengiriman pesan (SINKRONISASI TOTAL: Menggunakan standar kunci variabel Laravel)
     socket.on('send-message', (data) => {
-        // data: { senderId, receiverId, message, fileUrl, messageType }
-        const { senderId, receiverId, message, fileUrl, messageType } = data;
-        const type = messageType || 'text';
+        const { senderId, receiverId, message, attachment_url, attachment_name, messageType } = data;
+        const type = (attachment_url || messageType === 'file') ? 'file' : 'text';
 
-        // --- VALIDASI HANYA UNTUK TEKS BIASA ---
+        // Validasi teks 500 karakter di sisi server
         if (type === 'text') {
             if (!message || message.trim().length === 0) {
                 socket.emit('message-error', { error: 'Pesan tidak boleh kosong.' });
@@ -69,41 +68,41 @@ io.on('connection', (socket) => {
 
         console.log(`Message [${type}] from ${senderId} to ${receiverId}`);
 
-        // Create room name
         const roomName = [senderId, receiverId].sort((a, b) => a - b).join('-');
 
-        // Kirim data lengkap ke room (Teks + URL file jika ada)
+        // Broadcast data lengkap ke room dengan nama variabel yang konsisten
         io.to(roomName).emit('new-message', {
             sender_id: senderId,
             receiver_id: receiverId,
             message: message,
-            file_url: fileUrl || null,
+            attachment_url: attachment_url || null,
+            attachment_name: attachment_name || null, // Terpancar secara realtime ke penerima
             message_type: type,
             created_at: new Date().toISOString(),
         });
 
-        // Kirim notifikasi realtime ke receiver jika sedang di luar room
+        // Kirim notifikasi realtime jika penerima sedang di luar room
         const receiverSockets = onlineUsers.get(String(receiverId));
         if (receiverSockets) {
             receiverSockets.forEach((socketId) => {
                 io.to(socketId).emit('message-notification', {
                     sender_id: senderId,
                     message: message,
-                    file_url: fileUrl || null,
+                    attachment_url: attachment_url || null,
+                    attachment_name: attachment_name || null,
                     message_type: type,
                 });
             });
         }
     });
 
-    // Handle typing indicator using rooms
+    // Handle typing indicator
     socket.on('typing', (data) => {
         const { senderId, receiverId } = data;
         const roomName = [senderId, receiverId].sort((a, b) => a - b).join('-');
         socket.to(roomName).emit('user-typing', { senderId: senderId });
     });
 
-    // Stop typing indicator
     socket.on('stop-typing', (data) => {
         const { senderId, receiverId } = data;
         const roomName = [senderId, receiverId].sort((a, b) => a - b).join('-');

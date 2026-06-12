@@ -114,7 +114,7 @@
                         </button>
                     </div>
 
-                    {{-- Kustom Alert Notification Bar (Pengganti alert() browser agar interaktif) --}}
+                    {{-- Kustom Alert Notification Bar --}}
                     <div id="chat-alert-bar" class="hidden flex-shrink-0 px-4 py-2 border-t bg-red-50 items-center gap-3 transition-all duration-300">
                         <svg class="w-5 h-5 text-red-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
@@ -122,7 +122,7 @@
                         <span id="chat-alert-message" class="text-xs font-medium text-red-800 flex-1"></span>
                     </div>
 
-                    {{-- Input (always at bottom) --}}
+                    {{-- Input Form --}}
                     <div class="flex-shrink-0 px-4 py-3 border-t bg-white">
                         <form id="chat-form" class="flex items-center gap-2">
                             <label for="chat-file" class="cursor-pointer text-gray-400 hover:text-blue-600 transition flex-shrink-0" title="Kirim file">
@@ -220,10 +220,11 @@
             showChatAlert(data.error);
         });
 
-        // Socket listener untuk pesan masuk baru secara realtime
+        // Socket: incoming message dari partner (FIXED: Membaca parameter data.attachment_name secara eksplisit)
         socket.on('new-message', (data) => {
             if (data.sender_id == receiverId && data.receiver_id == userId) {
-                appendMessage(data.sender_id, data.message, data.file_url, data.message, data.created_at);
+                // Dioper dengan data.attachment_name asli bawaan Laravel agar instan terbaca di penerima
+                appendMessage(data.sender_id, data.message, data.attachment_url, data.attachment_name, data.created_at);
             }
         });
 
@@ -234,13 +235,30 @@
             const ext = fileTarget.split('.').pop().toLowerCase();
             const isImage = ['jpg','jpeg','png','gif','webp'].includes(ext);
             
+            // --- PROSES EKSTRAK NAMA FILE ASLI (FIXED) ---
+            // Utamakan nama berkas asli dari database/websocket. Jangan ekstrak hash dari URL jika nama aslinya tersedia.
+            let cleanFileName = 'Unduh Berkas';
+            if (attachmentName && !attachmentName.startsWith('http://') && !attachmentName.startsWith('https://')) {
+                cleanFileName = attachmentName;
+            } else if (attachmentUrl) {
+                const dynamicName = attachmentUrl.split('/').pop();
+                cleanFileName = decodeURIComponent(dynamicName);
+                if (cleanFileName.includes('chat-attachments/')) {
+                    cleanFileName = cleanFileName.replace('chat-attachments/', '');
+                }
+            }
+            // ---------------------------------------------
+            
             let attachHtml = '';
             if (attachmentUrl) {
                 if (isImage) {
                     attachHtml = `<a href="${attachmentUrl}" target="_blank"><img src="${attachmentUrl}" class="mt-2 max-w-xs rounded-lg border"></a>`;
                 } else {
                     const color = isMine ? 'bg-blue-700 text-blue-100' : 'bg-white border text-blue-600';
-                    attachHtml = `<a href="${attachmentUrl}" target="_blank" download="${attachmentName || 'file'}" class="flex items-center gap-2 mt-2 px-3 py-2 rounded-lg ${color} transition text-xs truncate max-w-[200px]">${attachmentName || 'File'}</a>`;
+                    attachHtml = `<a href="${attachmentUrl}" target="_blank" download="${cleanFileName}" class="flex items-center gap-2 mt-2 px-3 py-2 rounded-lg ${color} transition text-xs truncate max-w-[200px]" title="${cleanFileName}">
+                        <svg class="w-5 h-5 flex-shrink-0 ${isMine ? 'text-blue-200' : 'text-blue-600'}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        <span>${cleanFileName}</span>
+                    </a>`;
                 }
             }
             
@@ -257,7 +275,7 @@
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
-        // Handle pengiriman form via AJAX + Pemicu WebSocket Realtime (Line perbaikan validasi terpadu)
+        // Handle pengiriman form via AJAX + Pemicu WebSocket Realtime
         chatForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             hideChatAlert(); // Reset alert sebelumnya
@@ -276,7 +294,6 @@
             }
 
             // 2. VALIDASI PANJANG TEKS (MAKSIMAL 500 KARAKTER)
-            // Validasi ini memblokir baik pengiriman teks murni maupun teks yang dibarengi dengan attachment
             if (message.length > 500) {
                 showChatAlert('Pesan gagal dikirim! Panjang teks melebihi batas maksimal 500 karakter.');
                 return;
@@ -303,15 +320,16 @@
                 });
                 const data = await res.json();
 
-                // Render di browser sendiri secara instan
+                // Render di browser sendiri secara instan (menggunakan response attachment_name asli dari Laravel)
                 appendMessage(userId, data.message, data.attachment_url, data.attachment_name, data.created_at);
 
-                // Emit via socket.io membawa attachment_url asli agar realtime di layar lawan tanpa refresh
+                // Emit via socket.io dengan format penamaan variabel snake_case milik Laravel (FIXED)
                 socket.emit('send-message', { 
                     senderId: userId, 
                     receiverId: receiverId, 
                     message: data.message || '', 
-                    fileUrl: data.attachment_url || null,
+                    attachment_url: data.attachment_url || null,
+                    attachment_name: data.attachment_name || null, // data.attachment_name membawa nama asli file (misal: sssss.pdf)
                     messageType: file ? 'file' : 'text',
                     created_at: data.created_at 
                 });
