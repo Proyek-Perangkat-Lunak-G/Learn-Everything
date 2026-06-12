@@ -112,10 +112,11 @@ class ChatController extends Controller
 
     public function send(Request $request)
     {
+        // FIXED: Mengubah batasan pesan teks menjadi maksimal 500 karakter
         $request->validate([
             'receiver_id' => 'required|exists:users,id',
-            'message'     => 'nullable|string|max:5000',
-            'attachment'  => 'nullable|file|max:10240', // 10MB max
+            'message'     => 'nullable|string|max:500', 
+            'attachment'  => 'nullable|file|max:10240', // Maksimal 10MB (10240 KB)
         ]);
 
         // Must have message or attachment

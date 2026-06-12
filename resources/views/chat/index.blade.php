@@ -33,7 +33,7 @@
                         </a>
                     @endforeach
 
-                    {{-- Chat Marketplace: tutors + sellers not yet chatted --}}
+                    {{-- Chat Marketplace --}}
                     @php
                         $marketplaceContacts = collect();
                         if(isset($availableTutors)) $marketplaceContacts = $marketplaceContacts->merge($availableTutors->map(fn($u) => ['user' => $u, 'label' => 'Tutor']));
@@ -114,6 +114,14 @@
                         </button>
                     </div>
 
+                    {{-- Kustom Alert Notification Bar (Pengganti alert() browser agar interaktif) --}}
+                    <div id="chat-alert-bar" class="hidden flex-shrink-0 px-4 py-2 border-t bg-red-50 items-center gap-3 transition-all duration-300">
+                        <svg class="w-5 h-5 text-red-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                        </svg>
+                        <span id="chat-alert-message" class="text-xs font-medium text-red-800 flex-1"></span>
+                    </div>
+
                     {{-- Input (always at bottom) --}}
                     <div class="flex-shrink-0 px-4 py-3 border-t bg-white">
                         <form id="chat-form" class="flex items-center gap-2">
@@ -160,6 +168,10 @@
         const filePreviewBar = document.getElementById('file-preview-bar');
         const filePreviewName = document.getElementById('file-preview-name');
         const removeFileBtn = document.getElementById('remove-file');
+        
+        // Komponen Alert Baru
+        const chatAlertBar = document.getElementById('chat-alert-bar');
+        const chatAlertMessage = document.getElementById('chat-alert-message');
 
         socket.emit('register', userId);
         socket.emit('join-chat-room', { userId, partnerId: receiverId });
@@ -167,8 +179,27 @@
         // Scroll to bottom on load
         chatMessages.scrollTop = chatMessages.scrollHeight;
 
+        // Fungsi pembantu untuk menampilkan notifikasi error
+        function showChatAlert(text) {
+            chatAlertMessage.textContent = text;
+            chatAlertBar.classList.remove('hidden');
+            chatAlertBar.classList.add('flex');
+            
+            // Sembunyikan otomatis setelah 4 detik
+            setTimeout(() => {
+                hideChatAlert();
+            }, 4000);
+        }
+
+        function hideChatAlert() {
+            chatAlertBar.classList.add('hidden');
+            chatAlertBar.classList.remove('flex');
+            chatAlertMessage.textContent = '';
+        }
+
         // File preview UI toggler
         chatFile.addEventListener('change', () => {
+            hideChatAlert();
             if (chatFile.files.length > 0) {
                 filePreviewBar.classList.remove('hidden');
                 filePreviewBar.classList.add('flex');
@@ -181,11 +212,12 @@
             filePreviewBar.classList.add('hidden');
             filePreviewBar.classList.remove('flex');
             filePreviewName.textContent = '';
+            hideChatAlert();
         });
 
-        // Tangkap pesan error dari WebSocket server (misal: lebih dari 500 karakter)
+        // Tangkap pesan error dari WebSocket server
         socket.on('message-error', (data) => {
-            alert(data.error);
+            showChatAlert(data.error);
         });
 
         // Socket listener untuk pesan masuk baru secara realtime
@@ -225,16 +257,28 @@
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
-        // Handle pengiriman form via AJAX + Pemicu WebSocket Realtime
+        // Handle pengiriman form via AJAX + Pemicu WebSocket Realtime (Line perbaikan validasi terpadu)
         chatForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+            hideChatAlert(); // Reset alert sebelumnya
+            
             const message = chatInput.value.trim();
             const file = chatFile.files[0];
             if (!message && !file) return;
 
-            // Validasi lokal frontend jika hanya teks biasa yang > 500 karakter
-            if (!file && message.length > 500) {
-                alert('Pesan gagal dikirim! Maksimal 500 karakter.');
+            // 1. VALIDASI UKURAN FILE MAKSIMAL 10MB
+            if (file) {
+                const maxSizeInBytes = 10 * 1024 * 1024; // 10MB
+                if (file.size > maxSizeInBytes) {
+                    showChatAlert('Gagal mengirim! Ukuran file berkas maksimal adalah 10MB.');
+                    return;
+                }
+            }
+
+            // 2. VALIDASI PANJANG TEKS (MAKSIMAL 500 KARAKTER)
+            // Validasi ini memblokir baik pengiriman teks murni maupun teks yang dibarengi dengan attachment
+            if (message.length > 500) {
+                showChatAlert('Pesan gagal dikirim! Panjang teks melebihi batas maksimal 500 karakter.');
                 return;
             }
 
@@ -251,7 +295,7 @@
             filePreviewName.textContent = '';
 
             try {
-                // 1. Kirim data ke Laravel backend untuk di-save ke DB
+                // Kirim data ke Laravel backend untuk di-save ke DB
                 const res = await fetch('/chat/send', {
                     method: 'POST',
                     headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
@@ -259,10 +303,10 @@
                 });
                 const data = await res.json();
 
-                // 2. Render di browser sendiri secara instan
+                // Render di browser sendiri secara instan
                 appendMessage(userId, data.message, data.attachment_url, data.attachment_name, data.created_at);
 
-                // 3. Emit via socket.io membawa attachment_url asli agar realtime di layar lawan tanpa refresh
+                // Emit via socket.io membawa attachment_url asli agar realtime di layar lawan tanpa refresh
                 socket.emit('send-message', { 
                     senderId: userId, 
                     receiverId: receiverId, 
@@ -280,6 +324,7 @@
         // Typing indicator
         let typingTimeout;
         chatInput.addEventListener('input', () => {
+            hideChatAlert();
             socket.emit('typing', { senderId: userId, receiverId });
             clearTimeout(typingTimeout);
             typingTimeout = setTimeout(() => socket.emit('stop-typing', { senderId: userId, receiverId }), 1000);
