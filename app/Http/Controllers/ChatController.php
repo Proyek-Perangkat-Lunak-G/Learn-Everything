@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\SendChatRequest;
 use App\Models\Chat;
 use App\Models\Tutor;
 use App\Models\User;
+use App\Services\ChatService;
 use Illuminate\Http\Request;
 
 class ChatController extends Controller

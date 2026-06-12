@@ -147,117 +147,148 @@
 </div>
 
 @if(isset($receiver))
-@push('scripts')
-<script src="http://127.0.0.1:3000/socket.io/socket.io.js"></script>
-<script>
-    const socket = io('http://127.0.0.1:3000');
-    const userId = {{ auth()->id() }};
-    const receiverId = {{ $receiver->id }};
-    const chatMessages = document.getElementById('chat-messages');
-    const chatForm = document.getElementById('chat-form');
-    const chatInput = document.getElementById('chat-input');
-    const chatFile = document.getElementById('chat-file');
-    const filePreviewBar = document.getElementById('file-preview-bar');
-    const filePreviewName = document.getElementById('file-preview-name');
-    const removeFileBtn = document.getElementById('remove-file');
+    @push('scripts')
+    <script src="http://127.0.0.1:3000/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io('http://127.0.0.1:3000');
+        const userId = {{ auth()->id() }};
+        const receiverId = {{ $receiver->id }};
+        const chatMessages = document.getElementById('chat-messages');
+        const chatForm = document.getElementById('chat-form');
+        const chatInput = document.getElementById('chat-input');
+        const chatFile = document.getElementById('chat-file');
+        const filePreviewBar = document.getElementById('file-preview-bar');
+        const filePreviewName = document.getElementById('file-preview-name');
+        const removeFileBtn = document.getElementById('remove-file');
 
-    socket.emit('register', userId);
-    socket.emit('join-chat-room', { userId, partnerId: receiverId });
+        socket.emit('register', userId);
+        socket.emit('join-chat-room', { userId, partnerId: receiverId });
 
-    // Scroll to bottom on load
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-
-    // File preview
-    chatFile.addEventListener('change', () => {
-        if (chatFile.files.length > 0) {
-            filePreviewBar.classList.remove('hidden');
-            filePreviewBar.classList.add('flex');
-            filePreviewName.textContent = chatFile.files[0].name;
-        }
-    });
-    removeFileBtn.addEventListener('click', () => {
-        chatFile.value = '';
-        filePreviewBar.classList.add('hidden');
-        filePreviewBar.classList.remove('flex');
-        filePreviewName.textContent = '';
-    });
-
-    // Socket: incoming message from partner
-    socket.on('new-message', (data) => {
-        if (data.sender_id == receiverId && data.receiver_id == userId) {
-            appendMessage(data.sender_id, data.message, null, null, data.created_at);
-        }
-    });
-
-    function appendMessage(senderId, message, attachmentUrl, attachmentName, createdAt) {
-        const isMine = senderId == userId;
-        const ext = attachmentName ? attachmentName.split('.').pop().toLowerCase() : '';
-        const isImage = ['jpg','jpeg','png','gif','webp'].includes(ext);
-        let attachHtml = '';
-        if (attachmentUrl) {
-            if (isImage) {
-                attachHtml = `<a href="${attachmentUrl}" target="_blank"><img src="${attachmentUrl}" class="mt-2 max-w-xs rounded-lg border"></a>`;
-            } else {
-                const color = isMine ? 'bg-blue-700 text-blue-100' : 'bg-white border text-blue-600';
-                attachHtml = `<a href="${attachmentUrl}" target="_blank" download="${attachmentName || 'file'}" class="flex items-center gap-2 mt-2 px-3 py-2 rounded-lg ${color} transition text-xs truncate max-w-[200px]">${attachmentName || 'File'}</a>`;
-            }
-        }
-        const time = new Date(createdAt).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
-        const wrapper = document.createElement('div');
-        wrapper.className = `flex ${isMine ? 'justify-end' : 'justify-start'}`;
-        wrapper.innerHTML = `<div class="max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${isMine ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-900'}">
-            ${message ? `<p class="text-sm break-words">${message}</p>` : ''}
-            ${attachHtml}
-            <p class="text-xs mt-1 ${isMine ? 'text-blue-200' : 'text-gray-400'}">${time}</p>
-        </div>`;
-        chatMessages.appendChild(wrapper);
+        // Scroll to bottom on load
         chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
 
-    // Send message
-    chatForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const message = chatInput.value.trim();
-        const file = chatFile.files[0];
-        if (!message && !file) return;
-
-        const formData = new FormData();
-        formData.append('receiver_id', receiverId);
-        if (message) formData.append('message', message);
-        if (file) formData.append('attachment', file);
-
-        chatInput.value = '';
-        chatFile.value = '';
-        filePreviewBar.classList.add('hidden');
-        filePreviewBar.classList.remove('flex');
-        filePreviewName.textContent = '';
-
-        const res = await fetch('/chat/send', {
-            method: 'POST',
-            headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
-            body: formData,
+        // File preview UI toggler
+        chatFile.addEventListener('change', () => {
+            if (chatFile.files.length > 0) {
+                filePreviewBar.classList.remove('hidden');
+                filePreviewBar.classList.add('flex');
+                filePreviewName.textContent = chatFile.files[0].name;
+            }
         });
-        const data = await res.json();
 
-        appendMessage(userId, data.message, data.attachment_url, data.attachment_name, data.created_at);
+        removeFileBtn.addEventListener('click', () => {
+            chatFile.value = '';
+            filePreviewBar.classList.add('hidden');
+            filePreviewBar.classList.remove('flex');
+            filePreviewName.textContent = '';
+        });
 
-        if (message) {
-            socket.emit('send-message', { senderId: userId, receiverId, message, created_at: data.created_at });
+        // Tangkap pesan error dari WebSocket server (misal: lebih dari 500 karakter)
+        socket.on('message-error', (data) => {
+            alert(data.error);
+        });
+
+        // Socket listener untuk pesan masuk baru secara realtime
+        socket.on('new-message', (data) => {
+            if (data.sender_id == receiverId && data.receiver_id == userId) {
+                appendMessage(data.sender_id, data.message, data.file_url, data.message, data.created_at);
+            }
+        });
+
+        function appendMessage(senderId, message, attachmentUrl, attachmentName, createdAt) {
+            const isMine = senderId == userId;
+            
+            const fileTarget = attachmentUrl || attachmentName || '';
+            const ext = fileTarget.split('.').pop().toLowerCase();
+            const isImage = ['jpg','jpeg','png','gif','webp'].includes(ext);
+            
+            let attachHtml = '';
+            if (attachmentUrl) {
+                if (isImage) {
+                    attachHtml = `<a href="${attachmentUrl}" target="_blank"><img src="${attachmentUrl}" class="mt-2 max-w-xs rounded-lg border"></a>`;
+                } else {
+                    const color = isMine ? 'bg-blue-700 text-blue-100' : 'bg-white border text-blue-600';
+                    attachHtml = `<a href="${attachmentUrl}" target="_blank" download="${attachmentName || 'file'}" class="flex items-center gap-2 mt-2 px-3 py-2 rounded-lg ${color} transition text-xs truncate max-w-[200px]">${attachmentName || 'File'}</a>`;
+                }
+            }
+            
+            const time = new Date(createdAt).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
+            const wrapper = document.createElement('div');
+            wrapper.className = `flex ${isMine ? 'justify-end' : 'justify-start'}`;
+            wrapper.innerHTML = `<div class="max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${isMine ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-900'}">
+                ${message && !attachmentUrl ? `<p class="text-sm break-words">${message}</p>` : ''}
+                ${message && attachmentUrl ? `<p class="text-sm break-words mb-1">${message}</p>` : ''}
+                ${attachHtml}
+                <p class="text-xs mt-1 ${isMine ? 'text-blue-200' : 'text-gray-400'}">${time}</p>
+            </div>`;
+            chatMessages.appendChild(wrapper);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
         }
-    });
 
-    // Typing indicator
-    let typingTimeout;
-    chatInput.addEventListener('input', () => {
-        socket.emit('typing', { senderId: userId, receiverId });
-        clearTimeout(typingTimeout);
-        typingTimeout = setTimeout(() => socket.emit('stop-typing', { senderId: userId, receiverId }), 1000);
-    });
+        // Handle pengiriman form via AJAX + Pemicu WebSocket Realtime
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const message = chatInput.value.trim();
+            const file = chatFile.files[0];
+            if (!message && !file) return;
 
-    window.addEventListener('beforeunload', () => {
-        socket.emit('leave-chat-room', { userId, partnerId: receiverId });
-    });
-</script>
-@endpush
+            // Validasi lokal frontend jika hanya teks biasa yang > 500 karakter
+            if (!file && message.length > 500) {
+                alert('Pesan gagal dikirim! Maksimal 500 karakter.');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('receiver_id', receiverId);
+            if (message) formData.append('message', message);
+            if (file) formData.append('attachment', file);
+
+            // Reset komponen UI form
+            chatInput.value = '';
+            chatFile.value = '';
+            filePreviewBar.classList.add('hidden');
+            filePreviewBar.classList.remove('flex');
+            filePreviewName.textContent = '';
+
+            try {
+                // 1. Kirim data ke Laravel backend untuk di-save ke DB
+                const res = await fetch('/chat/send', {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
+                    body: formData,
+                });
+                const data = await res.json();
+
+                // 2. Render di browser sendiri secara instan
+                appendMessage(userId, data.message, data.attachment_url, data.attachment_name, data.created_at);
+
+                // 3. Emit via socket.io membawa attachment_url asli agar realtime di layar lawan tanpa refresh
+                socket.emit('send-message', { 
+                    senderId: userId, 
+                    receiverId: receiverId, 
+                    message: data.message || '', 
+                    fileUrl: data.attachment_url || null,
+                    messageType: file ? 'file' : 'text',
+                    created_at: data.created_at 
+                });
+
+            } catch (error) {
+                console.error("Gagal mengirim pesan:", error);
+            }
+        });
+
+        // Typing indicator
+        let typingTimeout;
+        chatInput.addEventListener('input', () => {
+            socket.emit('typing', { senderId: userId, receiverId });
+            clearTimeout(typingTimeout);
+            typingTimeout = setTimeout(() => socket.emit('stop-typing', { senderId: userId, receiverId }), 1000);
+        });
+
+        window.addEventListener('beforeunload', () => {
+            socket.emit('leave-chat-room', { userId, partnerId: receiverId });
+        });
+    </script>
+    @endpush
 @endif
 </x-app-layout>
