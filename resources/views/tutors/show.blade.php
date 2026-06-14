@@ -42,7 +42,8 @@
                     </div>
 
                     <!-- Reviews -->
-                    <div class="bg-white rounded-lg shadow-sm p-6">\n                        <h2 class="text-xl font-bold mb-4">Ulasan</h2>
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <h2 class="text-xl font-bold mb-4">Ulasan</h2>
                         @forelse($tutor->reviews as $review)
                             <div class="border-b pb-4 mb-4 last:border-0 last:pb-0 last:mb-0">
                                 <div class="flex items-center justify-between">
