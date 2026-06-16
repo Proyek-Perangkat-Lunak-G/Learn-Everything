@@ -27,12 +27,14 @@
                 <div class="grid grid-cols-2 gap-4 mb-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Harga (Rp)</label>
-                        <input type="number" name="price" value="{{ old('price', $product->price) }}" required min="0" class="w-full border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                        <input type="number" name="price" value="{{ old('price', $product->price) }}" required min="0" max="9999999999.99" step="0.01" class="w-full border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                        <p class="text-xs text-gray-500 mt-1">Maksimum: 9.999.999.999,99</p>
                         @error('price') <p class="text-red-500 text-sm mt-1">{{ $message }}</p> @enderror
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Stok</label>
-                        <input type="number" name="stock" value="{{ old('stock', $product->stock) }}" required min="0" class="w-full border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                        <input type="number" name="stock" value="{{ old('stock', $product->stock) }}" required min="0" max="2147483647" class="w-full border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                        <p class="text-xs text-gray-500 mt-1">Maksimum: 2.147.483.647</p>
                         @error('stock') <p class="text-red-500 text-sm mt-1">{{ $message }}</p> @enderror
                     </div>
                 </div>

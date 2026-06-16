@@ -57,8 +57,8 @@ class ProductApiController extends Controller
             'name' => 'required|string|max:255',
             'type' => 'required|in:physical,digital',
             'description' => 'required|string',
-            'price' => 'required|numeric|min:0',
-            'stock' => 'required|integer|min:0',
+            'price' => 'required|numeric|min:0|max:9999999999.99',
+            'stock' => 'required|integer|min:0|max:2147483647',
             'image' => 'nullable|image|max:2048',
         ]);
 
@@ -86,8 +86,8 @@ class ProductApiController extends Controller
             'name' => 'sometimes|string|max:255',
             'type' => 'sometimes|in:physical,digital',
             'description' => 'sometimes|string',
-            'price' => 'sometimes|numeric|min:0',
-            'stock' => 'sometimes|integer|min:0',
+            'price' => 'sometimes|numeric|min:0|max:9999999999.99',
+            'stock' => 'sometimes|integer|min:0|max:2147483647',
             'image' => 'nullable|image|max:2048',
             'is_active' => 'sometimes|boolean',
         ]);
